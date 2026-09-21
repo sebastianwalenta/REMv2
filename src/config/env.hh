@@ -10,3 +10,8 @@
 #define DISPLAY_SCL 18
 #define DISPLAY_RESET U8X8_PIN_NONE
 
+// Offline map (OpenLayers): the ESP32 has to serve ol.js/ol.css - and the map tiles -
+// itself, which the firmware does not do yet, so the map stays disabled for now.
+// Never link a CDN again here: the boat runs without internet access.
+#define REM_ENABLE_OFFLINE_MAP 0
+

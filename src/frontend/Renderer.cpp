@@ -149,20 +149,24 @@ void Renderer::drawSmallBlock(BasicBlock* cb,Print &client,BlockTypeEnum type)
 }
 
 
-void Renderer::drawHeader(Print &client)
+void Renderer::drawHead(Print &client)
 {
-  client.println("HTTP/1.1 200 OK");
-  client.println("Content-Type: text/html");
-  client.println(""); 
   client.println("<!DOCTYPE HTML>");
   client.println("<html>");
   client.println("<head>");
   client.println("<meta charset=\"UTF-8\">"); 
   client.println("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">");
-  client.println("<meta http-equiv=\"refresh\" content=\"10\">");
-  client.println("<link rel=\"stylesheet\" href=\"https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v6.15.1/css/ol.css\" type=\"text/css\">");
-  client.println("<link rel=\"stylesheet\" href=\"https://raw.githack.com/Thechopsee/REM-Boat/main/style.css\" type=\"text/css\">");
-  client.println("<script src=\"https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v6.15.1/build/ol.js\"></script>");
+  // Offline front-end: the ESP32 serves every asset itself, no CDN / no internet needed.
+  // /style.css is generated from src/frontend/style.css into flash, see
+  // scripts/generate_web_assets.py and the "/style.css" route in main.cpp.
+  client.println("<link rel=\"stylesheet\" href=\"/style.css\" type=\"text/css\">");
+#if REM_ENABLE_OFFLINE_MAP
+  // ol.css / ol.js are not hosted by the firmware yet - see REM_ENABLE_OFFLINE_MAP in config/env.hh
+  client.println("<link rel=\"stylesheet\" href=\"/ol.css\" type=\"text/css\">");
+  client.println("<script src=\"/ol.js\"></script>");
+  this->drawOLMJS(client);
+#endif
+  client.println("<title>REM-Boat</title>");
   
   client.println("<script type=\"text/javascript\">");
   client.println("function updateStatus(name) {");
@@ -185,57 +189,55 @@ void Renderer::drawHeader(Print &client)
 
   client.println("setInterval(startStatusUpdater, 3000);");
   client.println("</script>");
-
-  
-  client.println("<title>REM-Boat</title>");
-  this->drawOLMJS(client);
   client.println("</head>");
-  client.println("<body onload=start()>");
+}
+
+void Renderer::drawHeader(Print &client)
+{
+  client.println("HTTP/1.1 200 OK");
+  client.println("Content-Type: text/html");
+  client.println("");
+  this->drawHead(client);
+  client.println("<body>");
   client.println("<h1>REM-Boat</h1>");
   client.println("<div class=\"container\">");
 }
 
+// OpenLayers map - rendered only when REM_ENABLE_OFFLINE_MAP is enabled (config/env.hh).
+// Everything it loads has to come from the ESP32 itself: /ol.js, /ol.css and the tiles.
+#if REM_ENABLE_OFFLINE_MAP
 void Renderer::drawOLMJS(Print &client)
 {
   client.println("<script type=\"text/javascript\">");
-  client.println("function start(){var map = new ol.Map({target: \"map\",layers: [new ol.layer.Tile({source: new ol.source.OSM()})],view: new ol.View({center: ol.proj.fromLonLat([18.610968,49.754749]),zoom:17 })});");
+  // Offline tiles served by the ESP32 (data/tiles/{z}/{x}/{y}.png + "pio run -t uploadfs")
+  client.println("function start(){var map = new ol.Map({target: \"map\",layers: [new ol.layer.Tile({source: new ol.source.XYZ({url: '/tiles/{z}/{x}/{y}.png'})})],view: new ol.View({center: ol.proj.fromLonLat([18.610968,49.754749]),zoom:17 })});");
   client.println("var markers = new ol.layer.Vector({");
-  client.println("source: new ol.source.Vector(),style: new ol.style.Style({image: new ol.style.Icon({anchor: [0.5, 1],src: 'https://icons-for-free.com/download-icon-map+marker+icon-1320166582858325800_48.png'})})});");
+  // Inline marker (SVG data URI) - no external icon file is loaded.
+  client.println("source: new ol.source.Vector(),style: new ol.style.Style({image: new ol.style.Icon({anchor: [0.5, 1],src: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIzNiIgdmlld0JveD0iMCAwIDI0IDM2Ij48cGF0aCBkPSJNMTIgMEM1LjQgMCAwIDUuNCAwIDEyYzAgOSAxMiAyNCAxMiAyNHMxMi0xNSAxMi0yNGMwLTYuNi01LjQtMTItMTItMTJ6IiBmaWxsPSIjZjQ0MzM2Ii8+PGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcj0iNSIgZmlsbD0iI2ZmZmZmZiIvPjwvc3ZnPg=='})})});");
   client.println("map.addLayer(markers);");
 
  client.println("var marker = new ol.Feature(new ol.geom.Point(ol.proj.fromLonLat([18.610968, 49.754749])));");
  client.println("markers.getSource().addFeature(marker);");
   client.println("}</script>");
 }
+#endif
 
 
 void Renderer::drawNew(std::vector<GroupBlock*>blocks,Print &client)
 {   
-    client.println("<!DOCTYPE HTML>");
-    client.println("<html>");
     ///////////////////////////head////////////////
-    client.println("<head>");
-
-    client.println("<meta charset=\"UTF-8\">");
-    client.println("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">");
-    //client.println("<meta http-equiv=\"refresh\" content=\"10\">");
-    client.println("<link rel=\"stylesheet\" href=\"https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v6.15.1/css/ol.css\" type=\"text/css\">");
-    client.println("<link rel=\"stylesheet\" href=\"https://raw.githack.com/Thechopsee/REM-Boat/main/style.css\" type=\"text/css\">");
-    client.println("<script src=\"https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v6.15.1/build/ol.js\"></script>");
-    client.println("<title>REM-Boat</title>");
-
- 
-    client.println("<script type=\"text/javascript\">");
-   /* for(int i=0;i<this->strategy->jscomands.size();i++)
-    {
-        client.println(strategy->jscomands[i]->renderMessage().c_str());
-    }*/
-    client.println("</script>");
-    client.println("</head>");
+    this->drawHead(client);
     //////////////////////body////////////////////
+#if REM_ENABLE_OFFLINE_MAP
     client.println("<body onload=start()>");
+#else
+    client.println("<body>");
+#endif
     client.println("<h1>REM</h1>");
     client.println("<h3>RemoteEffectManager</h3>");
+#if REM_ENABLE_OFFLINE_MAP
+    client.println("<div id=\"map\" class=\"map\"></div>");
+#endif
     client.println("<div class=\"container\">");
     for(int i=0;i<blocks.size();i++)
     {
@@ -243,4 +245,5 @@ void Renderer::drawNew(std::vector<GroupBlock*>blocks,Print &client)
     }
     client.println("</div>");
     client.println("</body>");
+    client.println("</html>");
 }

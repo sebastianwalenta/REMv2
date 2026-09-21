@@ -12,6 +12,7 @@
 #include "objects/GroupBlock.hh"
 #include "objects/BasicBlock.hh"
 #include "frontend/Renderer.hh"
+#include "frontend/assets/styleCss.hh"
 #include "enums/BlockTypeEnum.hh"
 #include "objects/ControllBlocks/OnOffBlock.hh"
 #include "objects/ControllBlocks/SliderBlock.hh"
@@ -256,6 +257,15 @@ void setup() {
     if (!found) {
       request->send(404, "text/plain", "Sensor not found");
     }
+  });
+
+  // Offline front-end asset: the stylesheet lives in flash, generated from
+  // src/frontend/style.css by scripts/generate_web_assets.py (no CDN, no internet).
+  server.on("/style.css", HTTP_GET, [](AsyncWebServerRequest *request)
+  {
+    AsyncWebServerResponse *response = request->beginResponse_P(200, "text/css", (const uint8_t *)STYLE_CSS, sizeof(STYLE_CSS) - 1);
+    response->addHeader("Cache-Control", "public, max-age=86400");
+    request->send(response);
   });
 
   server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {

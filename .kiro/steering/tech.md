@@ -20,6 +20,21 @@
 
 Build flag: `-DELEGANTOTA_USE_ASYNC_WEBSERVER=1` (required for ElegantOTA + async server integration)
 
+Extra script: `extra_scripts = pre:scripts/generate_web_assets.py` — runs before every build and
+converts the front-end assets in `src/frontend/` into PROGMEM C++ headers.
+
+## Web Assets (offline front-end)
+
+The model is used without internet access, so the ESP32 serves the UI itself.
+
+- `scripts/generate_web_assets.py` turns `src/frontend/style.css` into
+  `src/frontend/assets/styleCss.hh` (a PROGMEM string); it only rewrites the header when the
+  CSS changed, so builds stay incremental.
+- `main.cpp` serves it at `/style.css` with `AsyncProgmemResponse` — streamed in chunks straight
+  from flash, no copy into RAM, plus a `Cache-Control` header.
+- The OpenLayers map stays disabled (`REM_ENABLE_OFFLINE_MAP` in `src/config/env.hh`) until
+  `ol.js`/`ol.css` are hosted by the device as well.
+
 ## Serial / Upload Settings
 
 - Monitor baud: `9600`

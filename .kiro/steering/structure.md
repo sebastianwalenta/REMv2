@@ -29,6 +29,9 @@ REMv2/
 │   ├── events/
 │   │   └── DataDrivenEvent.hh    # Helpers for sensor → display update events
 │   ├── frontend/
+│   │   ├── style.css             # Single source of truth for the UI styling (offline)
+│   │   ├── assets/
+│   │   │   └── styleCss.hh       # GENERATED from style.css - do not edit (PROGMEM string)
 │   │   └── Renderer.hh/.cpp      # Generates HTML response for the / route from GroupBlock list
 │   ├── modelprofiles/
 │   │   ├── ModelProfile.hh       # Interface: LoadModel() → vector<GroupBlock*>
@@ -52,6 +55,8 @@ REMv2/
 │       ├── GpsService            # Reads NMEA from UART, parses with TinyGPSPlus
 │       ├── RealTimeService       # (Time/RTC utilities)
 │       └── GpsData.hh            # GPS data struct
+├── scripts/
+│   └── generate_web_assets.py    # Build pre-script: src/frontend/style.css -> PROGMEM C++ header
 ├── include/                      # PlatformIO global includes (currently unused)
 ├── lib/                          # Local libraries (currently unused — deps via lib_deps)
 ├── test/                         # PlatformIO unit test directory
@@ -79,3 +84,4 @@ REMv2/
 - Services that should have a single instance use the singleton pattern (`StorageService::getInstance()`).
 - Raw pointers and `new` are used throughout (no smart pointers) — consistent with Arduino/embedded conventions.
 - Avoid blocking calls in `loop()`; long-running effects belong in `Action` subclasses (FreeRTOS tasks).
+- The front-end is offline: every asset is served by the ESP32 itself. Keep `https://` links out of the rendered page, embed icons as inline SVG data URIs and add new files to `scripts/generate_web_assets.py` so they end up in flash.
