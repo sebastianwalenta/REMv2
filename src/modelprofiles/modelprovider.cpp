@@ -1,9 +1,10 @@
 #include "modelprovider.hh"
 #include "R18ModelProfile.hh"
+#include "RCBenchyProfile.hh"
 
 ModelProvider::ModelProvider()
 {
-    modelProfile = new R18ModelProfile();
+    modelProfile = new RCBenchyProfile();
     this->LoadModel();
 }
 void ModelProvider::LoadModel() 
